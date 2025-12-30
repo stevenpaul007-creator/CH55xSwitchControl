@@ -14,6 +14,8 @@ __xdata USB_JoystickReport_Input_t controller_report;
 
 __xdata const uint16_t BUTTON_PUSHING_MSEC = 100;
 
+bool _autoSend = true;
+
 /**
  * @brief USBコントローラーの初期化
  */
@@ -47,22 +49,26 @@ void sendReport(void) {
 
 void pressButton(uint16_t button) {
   controller_report.Button |= button;
-  sendReport();
+  if(_autoSend)
+    sendReport();
 }
 
 void releaseButton(uint16_t button) {
   controller_report.Button &= ~button;
-  sendReport();
+  if(_autoSend)
+    sendReport();
 }
 
 void pressHatButton(uint8_t hat) {
   controller_report.Hat = hat;
-  sendReport();
+  if(_autoSend)
+    sendReport();
 }
 
 void releaseHatButton(void) {
   controller_report.Hat = 8;
-  sendReport();
+  if(_autoSend)
+    sendReport();
 }
 
 void setStickTiltRatio(uint8_t lx_per, uint8_t ly_per, uint8_t rx_per, uint8_t ry_per) {
@@ -70,7 +76,8 @@ void setStickTiltRatio(uint8_t lx_per, uint8_t ly_per, uint8_t rx_per, uint8_t r
   controller_report.LY = (uint8_t)(ly_per * 0xFF / 200 + 0x80);
   controller_report.RX = (uint8_t)(rx_per * 0xFF / 200 + 0x80);
   controller_report.RY = (uint8_t)(ry_per * 0xFF / 200 + 0x80);
-  sendReport();
+  if(_autoSend)
+    sendReport();
 }
 
 /**
@@ -97,8 +104,12 @@ void pushButton(uint16_t button, uint32_t delay_time_msec) {
 void pushButtonLoop(uint16_t button, uint32_t delay_time_msec, uint16_t loop_num) {
   for (uint32_t i = 0; i < loop_num; i++) {
     pressButton(button);
+    if(!_autoSend)
+      sendReport();
     delay(BUTTON_PUSHING_MSEC);
     releaseButton(button);
+    if(!_autoSend)
+      sendReport();
     delay(delay_time_msec);
   }
   delay(BUTTON_PUSHING_MSEC);
@@ -112,8 +123,12 @@ void pushButtonLoop(uint16_t button, uint32_t delay_time_msec, uint16_t loop_num
  */
 void pushButtonContinuous(uint16_t button, uint32_t pushing_time_msec) {
   pressButton(button);
+    if(!_autoSend)
+      sendReport();
   delay(pushing_time_msec);
   releaseButton(button);
+    if(!_autoSend)
+      sendReport();
   delay(BUTTON_PUSHING_MSEC);
 }
 
@@ -125,8 +140,12 @@ void pushButtonContinuous(uint16_t button, uint32_t pushing_time_msec) {
  */
 void pushHatButton(uint8_t hat, uint32_t delay_time_msec) {
   pressHatButton(hat);
+    if(!_autoSend)
+      sendReport();
   delay(BUTTON_PUSHING_MSEC);
   releaseHatButton();
+    if(!_autoSend)
+      sendReport();
   delay(delay_time_msec);
   delay(BUTTON_PUSHING_MSEC);
 }
@@ -141,8 +160,12 @@ void pushHatButton(uint8_t hat, uint32_t delay_time_msec) {
 void pushHatButtonLoop(uint8_t hat, uint32_t delay_time_msec, uint16_t loop_num) {
   for (uint32_t i = 0; i < loop_num; i++) {
     pressHatButton(hat);
+    if(!_autoSend)
+      sendReport();
     delay(BUTTON_PUSHING_MSEC);
     releaseHatButton();
+    if(!_autoSend)
+      sendReport();
     delay(delay_time_msec);
   }
   delay(BUTTON_PUSHING_MSEC);
@@ -156,8 +179,12 @@ void pushHatButtonLoop(uint8_t hat, uint32_t delay_time_msec, uint16_t loop_num)
  */
 void pushHatButtonContinuous(uint8_t hat, uint32_t pushing_time_msec) {
   pressHatButton(hat);
+  if(!_autoSend)
+    sendReport();
   delay(pushing_time_msec);
   releaseHatButton();
+  if(!_autoSend)
+    sendReport();
   delay(BUTTON_PUSHING_MSEC);
 }
 
@@ -172,7 +199,15 @@ void pushHatButtonContinuous(uint8_t hat, uint32_t pushing_time_msec) {
  */
 void tiltJoystick(uint8_t lx_per, uint8_t ly_per, uint8_t rx_per, uint8_t ry_per, uint32_t tilt_time_msec) {
   setStickTiltRatio(lx_per, ly_per, rx_per, ry_per);
+  if(!_autoSend)
+    sendReport();
   delay(tilt_time_msec);
   setStickTiltRatio(0, 0, 0, 0);
+  if(!_autoSend)
+    sendReport();
   delay(BUTTON_PUSHING_MSEC);
+}
+
+void setAutoSendReport(bool autoSendReport){
+  _autoSend = autoSendReport;
 }
